@@ -1,926 +1,419 @@
 # Digital Trust Score System
 
-## Authentication-Free Architecture Update — v1.0.1
+A complete, production-ready, fully anonymous Digital Trust Score web application engineered to evaluate entity trustworthiness across seven weighted security and behavioral signal dimensions.
 
-**Update date:** 18 August 2026
-**Previous version:** 1.0.0
-**New version:** 1.0.1
-**Access model:** Fully public / no authentication
+> **Zero Authentication Policy**: Built strictly without authentication, user accounts, JWT, OAuth, or password fields. Every visitor has immediate, unrestricted access to the complete trust calculator.
 
 ---
 
-# 1. Access Model
+## 1. Project Overview
 
-Digital Trust Score is now designed as a **fully open system**.
+The **Digital Trust Score System** provides a transparent, open-access analytical engine for scoring entity trustworthiness on a scale of 0 to 100. It measures identity, security posture, account reliability, behavioral consistency, interaction history, reputation, and data consistency using a deterministic mathematical model.
 
-Anyone can access the platform and use its publicly available functionality without:
-
-* Login
-* Sign-up
-* Account creation
-* Passwords
-* Email verification
-* Phone verification
-* Social login
-* Membership
-* Subscription
-* API authentication tokens
-* Session management
-* User credentials
-* Authentication cookies
-* Authorization barriers
-
-The system must not require a user to identify themselves before using the public trust-scoring functionality.
+The platform is designed to be maintainable in both **Eclipse** (for Spring Boot backend) and **VS Code** (for React frontend) without relying on automated code-generation platforms or proprietary cloud dependencies.
 
 ---
 
-# 2. Updated User Flow
+## 2. Architecture
 
-## Previous Flow
+The application adopts a decoupled client-server architecture:
 
-```text
-User
- ↓
-Sign Up
- ↓
-Email / Password
- ↓
-Login
- ↓
-Authentication
- ↓
-Dashboard
- ↓
-Trust Score
 ```
-
-## New Flow
-
-```text
-User
- ↓
-Website / API
- ↓
-Enter Trust Information
- ↓
-Validation
- ↓
-Trust Calculation
- ↓
-Trust Score
- ↓
-Explanation
-```
-
-There is **no authentication layer** between the user and the trust-scoring functionality.
-
----
-
-# 3. Updated Architecture
-
-```text
-                         ┌──────────────────────┐
-                         │       ANY USER       │
-                         │   No account needed  │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │    Public Frontend   │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │     REST API v1      │
-                         │    Public Endpoints  │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │   Input Validation   │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │   Data Processing    │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │   Scoring Engine     │
-                         └──────────┬───────────┘
-                                    │
-                         ┌──────────┴───────────┐
-                         ▼                      ▼
-                ┌─────────────────┐    ┌─────────────────┐
-                │ Trust Score     │    │ Explanation     │
-                │ 0 – 100         │    │ & Dimensions    │
-                └────────┬────────┘    └────────┬────────┘
-                         │                      │
-                         └──────────┬───────────┘
-                                    ▼
-                         ┌──────────────────────┐
-                         │     Public Result    │
-                         └──────────────────────┘
++-------------------------------------------------------+
+|                React + TypeScript Frontend            |
+|       (Vite, Component UI, Glassmorphic Theme)        |
++---------------------------+---------------------------+
+                            | REST API (HTTP/JSON)
+                            v
++-------------------------------------------------------+
+|               Spring Boot 3.x / Java Backend          |
+|    - TrustController & HealthController               |
+|    - TrustScoreService & TrustScoringEngine           |
+|    - Jakarta Validation & Global Exception Handler    |
++---------------------------+---------------------------+
+                            | Spring Data JPA
+                            v
++-------------------------------------------------------+
+|                 MySQL Database                        |
+|            (digital_trust_score database)             |
+|              table: trust_calculations                |
++-------------------------------------------------------+
 ```
 
 ---
 
-# 4. Components Removed
+## 3. Features
 
-The following components are completely removed from the architecture.
-
-## Backend
-
-Remove:
-
-```text
-AuthenticationController
-AuthService
-AuthenticationService
-UserAuthenticationFilter
-JwtFilter
-JwtService
-PasswordEncoder
-RefreshTokenService
-SessionService
-EmailVerificationService
-OAuthService
-SocialLoginService
-AuthorizationService
-```
-
-If these components existed only for authentication, they should be deleted rather than left unused.
+- **Instant Anonymous Trust Calculation**: Dual-control 0-100 sliders and numeric inputs.
+- **7 Weighted Signal Dimensions**: Identity, Security, Reliability, Behavior, Interaction, Reputation, and Consistency.
+- **Transparent Confidence Engine**: Evaluates standard deviation (indicator spread) and mean distance from neutral (decisiveness).
+- **5 Classification Tiers**: `VERY_LOW`, `LOW`, `MODERATE`, `HIGH`, and `VERY_HIGH`.
+- **Public REST API**: `/api/v1/trust/health`, `/api/v1/trust/calculate`, and `/api/v1/trust/methodology`.
+- **Complete MySQL Persistence**: Automatically persists calculated scores without personal identity markers.
+- **Developer Workspaces**: Eclipse project structure for Java backend, VS Code for React frontend.
+- **Responsive Dark SaaS UI**: Tailored color palette (Navy, Slate, Sky Blue, Emerald, Amber, Rose; zero primary purple).
 
 ---
 
-# 5. Security Configuration
+## 4. Technology Stack
 
-There is no authentication mechanism in the public application.
+### Backend
+- **Java**: 17+ (JDK 24 compatible)
+- **Framework**: Spring Boot 3.2+
+- **Build Tool**: Apache Maven (via Maven Wrapper `mvnw.cmd`)
+- **Web & Validation**: Spring Web MVC, Jakarta Validation (`@NotNull`, `@Min`, `@Max`)
+- **ORM & Database**: Spring Data JPA, Hibernate, MySQL 8.0+ (H2 in-memory for unit testing)
+- **IDE Support**: Eclipse / VS Code / IntelliJ IDEA
 
-The API should use a configuration equivalent to:
-
-```java
-@Configuration
-@EnableWebSecurity
-public class SecurityConfig {
-
-    @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
-
-        return http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
-                )
-                .build();
-    }
-}
-```
-
-If Spring Security is not required for any remaining security feature, it can be removed entirely from the application.
-
-### Important
-
-`permitAll()` means the application does not require credentials.
-
-It does **not** mean the application should have no security protections whatsoever.
-
-Rate limiting, input validation, abuse prevention, HTTPS, secure headers, database protection, and monitoring should remain.
+### Frontend
+- **Framework**: React 18
+- **Language**: TypeScript 5
+- **Build Tool & Dev Server**: Vite 5
+- **Styling**: Modern CSS3 Custom Properties & Responsive Flex/Grid Layout
+- **Icons**: Lucide React
+- **IDE Support**: VS Code
 
 ---
 
-# 6. Updated API
+## 5. Folder Structure
 
-The API is now public.
-
-## Trust Score
-
-```http
-POST /api/v1/trust/calculate
 ```
-
-No token required.
-
-### Request
-
-```json
-{
-  "attributes": {
-    "identityVerification": 90,
-    "accountReliability": 80,
-    "behaviorConsistency": 70,
-    "interactionHistory": 85,
-    "securityPosture": 90,
-    "reputation": 75,
-    "dataConsistency": 80
-  }
-}
-```
-
-### Response
-
-```json
-{
-  "score": 82.25,
-  "confidence": 91.0,
-  "classification": "HIGH_TRUST",
-  "scoreVersion": "1.0",
-  "dimensions": {
-    "identity": 90.0,
-    "reliability": 80.0,
-    "behavior": 70.0,
-    "interaction": 85.0,
-    "security": 90.0,
-    "reputation": 75.0,
-    "consistency": 80.0
-  }
-}
-```
-
----
-
-# 7. Public API Endpoints
-
-All public endpoints are accessible without authentication.
-
-```text
-POST /api/v1/trust/calculate
-
-POST /api/v1/trust/attributes/validate
-
-GET  /api/v1/trust/scoring-model
-
-GET  /api/v1/trust/classifications
-
-GET  /api/v1/trust/health
-```
-
-If the application supports a score-history feature, it should not require an account.
-
-Instead of:
-
-```text
-GET /api/v1/trust/{userId}/history
-```
-
-use a calculation/request reference:
-
-```text
-GET /api/v1/trust/results/{calculationId}
-```
-
-However, if complete anonymity is required, avoid persistent calculation identifiers unless they are genuinely necessary.
-
----
-
-# 8. No User Accounts
-
-The system should **not maintain application users** for normal public scoring.
-
-The following database table is therefore unnecessary for the public scoring workflow:
-
-```text
-users
-```
-
-There should be no requirement to create:
-
-```text
-userId
-username
-email
-password
-phone
-account
-membership
-```
-
-for calculating a trust score.
-
----
-
-# 9. Privacy-First Data Model
-
-The new model should focus on **trust calculation requests**, not people accounts.
-
-Recommended entities:
-
-```text
-TrustCalculation
-TrustAttribute
-TrustScore
-TrustScoreExplanation
-ScoringModel
-RiskSignal
-```
-
----
-
-## TrustCalculation
-
-```text
-TrustCalculation
-----------------
-calculationId
-score
-confidence
-classification
-scoreVersion
-createdAt
-```
-
-A calculation may be completely anonymous.
-
----
-
-## TrustAttribute
-
-```text
-TrustAttribute
---------------
-id
-calculationId
-attributeType
-value
-normalizedValue
-source
-confidence
-```
-
-No email or password is required.
-
----
-
-## TrustScore
-
-```text
-TrustScore
-----------
-id
-calculationId
-overallScore
-confidenceScore
-classification
-scoreVersion
-calculatedAt
-```
-
----
-
-# 10. Frontend Changes
-
-Remove every authentication-related page and component.
-
-Delete:
-
-```text
-Login.jsx
-Register.jsx
-Signup.jsx
-ForgotPassword.jsx
-ResetPassword.jsx
-VerifyEmail.jsx
-AuthContext.jsx
-ProtectedRoute.jsx
-LoginForm.jsx
-RegisterForm.jsx
-SocialLogin.jsx
-Membership.jsx
-Subscription.jsx
-```
-
-Names may differ depending on the implementation, but the functionality should be removed completely.
-
----
-
-# 11. New Frontend Flow
-
-The landing page should immediately provide the scoring functionality.
-
-```text
-Home
- │
- ├── What is Digital Trust Score?
- │
- ├── Enter Trust Attributes
- │
- ├── Calculate Score
- │
- ├── View Result
- │
- ├── Understand Score
- │
- └── Learn About Methodology
-```
-
-There should be no:
-
-```text
-Login
-Sign Up
-Create Account
-Continue with Google
-Continue with GitHub
-Enter Email
-Enter Password
-Verify Email
-Subscribe
-Become a Member
-```
-
----
-
-# 12. Public Scoring Interface
-
-Example:
-
-```text
-┌─────────────────────────────────────────┐
-│          DIGITAL TRUST SCORE            │
-│                                         │
-│  Evaluate digital trust using           │
-│  transparent measurable signals.        │
-│                                         │
-│  Identity Verification       [ 90 ]     │
-│  Account Reliability         [ 80 ]     │
-│  Behavioral Consistency      [ 70 ]     │
-│  Interaction History         [ 85 ]     │
-│  Security Posture            [ 90 ]     │
-│  Reputation                  [ 75 ]     │
-│  Data Consistency            [ 80 ]     │
-│                                         │
-│             [ CALCULATE ]               │
-└─────────────────────────────────────────┘
-```
-
-After calculation:
-
-```text
-┌─────────────────────────────────────────┐
-│              TRUST SCORE                │
-│                                         │
-│                  82.25                  │
-│                                         │
-│              HIGH TRUST                 │
-│                                         │
-│  Confidence: 91%                        │
-│                                         │
-│  [View Detailed Explanation]            │
-└─────────────────────────────────────────┘
-```
-
----
-
-# 13. Session Management
-
-No application session is required.
-
-Remove:
-
-```text
-HttpSession
-session cookies
-refresh tokens
-access tokens
-authentication cookies
-persistent login
-```
-
-The browser can communicate directly with the public API.
-
----
-
-# 14. API Security Without Authentication
-
-Removing authentication does **not** mean removing all security.
-
-Because anyone can access the API, additional protections become particularly important.
-
-## Required protections
-
-### Rate limiting
-
-Example:
-
-```text
-100 requests / minute / IP
-```
-
-The exact limit should be determined through testing.
-
-### Input validation
-
-Reject:
-
-```text
-negative values
-values > 100
-unexpected attribute types
-oversized requests
-malformed JSON
-unknown fields where inappropriate
-```
-
-### Request size limits
-
-Prevent extremely large request bodies.
-
-### CORS
-
-Allow only the frontend origins required by the deployment.
-
-### HTTPS
-
-All production communication should use HTTPS.
-
-### Security headers
-
-Use appropriate HTTP security headers.
-
-### Abuse detection
-
-Monitor:
-
-```text
-request floods
-automated scraping
-repeated invalid requests
-abnormal calculation patterns
-```
-
----
-
-# 15. Anonymous Usage
-
-The application should not require personal identity to calculate a score.
-
-However, operational infrastructure may still record technical information such as:
-
-```text
-timestamp
-request duration
-HTTP status
-endpoint
-application error
-aggregated rate-limit information
-```
-
-Avoid collecting unnecessary IP addresses or other identifiers.
-
-If IP addresses are temporarily processed for rate limiting, define:
-
-* Purpose
-* Retention period
-* Access controls
-* Deletion policy
-
----
-
-# 16. Updated README — Access Section
-
-Add the following prominently to the README:
-
-```markdown
-## No Account Required
-
-Digital Trust Score is completely open and accessible.
-
-You do not need to:
-
-- Create an account
-- Sign in
-- Provide an email address
-- Provide a phone number
-- Create a password
-- Verify your identity
-- Connect a social account
-- Purchase a subscription
-
-Simply provide the required trust attributes and calculate the score.
-
-No authentication is required for the public scoring API.
-```
-
----
-
-# 17. Updated Quick Start
-
-The Quick Start is now only:
-
-```bash
-git clone https://github.com/<your-username>/digital-trust-score.git
-
-cd digital-trust-score
-
-mvn clean verify
-
-mvn spring-boot:run
-```
-
-Then:
-
-```http
-POST http://localhost:8080/api/v1/trust/calculate
-Content-Type: application/json
-```
-
-No login.
-
-No registration.
-
-No token.
-
-No account.
-
----
-
-# 18. Updated Environment Variables
-
-Remove:
-
-```text
-JWT_SECRET
-JWT_EXPIRATION
-REFRESH_TOKEN_EXPIRATION
-OAUTH_CLIENT_ID
-OAUTH_CLIENT_SECRET
-GOOGLE_CLIENT_ID
-GOOGLE_CLIENT_SECRET
-EMAIL_VERIFICATION_URL
-PASSWORD_RESET_URL
-```
-
-Keep only configuration actually required by the application.
-
-Example:
-
-```text
-DB_URL
-DB_USERNAME
-DB_PASSWORD
-SERVER_PORT
-TRUST_SCORE_VERSION
-LOG_LEVEL
-RATE_LIMIT
-```
-
-Database credentials remain server-side secrets and must never be exposed to frontend users.
-
----
-
-# 19. Updated Project Structure
-
-```text
 digital-trust-score/
-│
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/digitaltrust/
-│   │   │       ├── controller/
-│   │   │       │   ├── TrustController.java
-│   │   │       │   ├── ScoringModelController.java
-│   │   │       │   └── HealthController.java
-│   │   │       │
-│   │   │       ├── dto/
-│   │   │       ├── entity/
-│   │   │       ├── repository/
-│   │   │       ├── service/
-│   │   │       ├── scoring/
-│   │   │       ├── validation/
-│   │   │       ├── exception/
-│   │   │       └── config/
-│   │   │
-│   │   └── resources/
-│   │       └── application.yml
-│   │
-│   └── test/
-│
-├── docs/
-│   ├── architecture.md
-│   ├── scoring-model.md
-│   ├── security.md
-│   ├── privacy.md
-│   └── api.md
-│
+├── .env.example
 ├── README.md
-├── CHANGELOG.md
-├── LICENSE
-├── pom.xml
-└── Dockerfile
-```
-
-There is now **no authentication package**.
-
----
-
-# 20. Version Update
-
-## v1.0.1 — Open Access Release
-
-### Removed
-
-* Login
-* Registration
-* Account creation
-* Password authentication
-* Email verification
-* Phone verification
-* Social login
-* OAuth
-* JWT authentication
-* Refresh tokens
-* Session management
-* Membership gates
-* Subscription gates
-* Protected routes
-* User authentication database model
-* Authentication-related API endpoints
-
-### Changed
-
-* All public scoring functionality is accessible without authentication.
-* Trust calculations no longer require a user account.
-* API requests no longer require authorization headers.
-* Frontend starts directly at the scoring interface.
-* Trust calculations are anonymous by default.
-* Score history is no longer tied to an authenticated user.
-
-### Added
-
-* Public scoring API
-* Anonymous calculation model
-* Public scoring-model information
-* Anonymous request validation
-* Rate limiting
-* Abuse prevention
-* Privacy-first request handling
-
----
-
-# 21. Breaking Changes
-
-The following are breaking changes from v1.0.0:
-
-### Removed
-
-```text
-POST /api/v1/auth/register
-POST /api/v1/auth/login
-POST /api/v1/auth/refresh
-POST /api/v1/auth/logout
-```
-
-### Changed
-
-Old:
-
-```text
-POST /api/v1/trust/{userId}/calculate
-Authorization: Bearer <token>
-```
-
-New:
-
-```text
-POST /api/v1/trust/calculate
-```
-
-No authentication header is required.
-
-### Data model
-
-The scoring workflow no longer depends on:
-
-```text
-User
-User ID
-Account
-Authentication
+├── backend/
+│   ├── mvnw.cmd
+│   ├── pom.xml
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/digitaltrust/
+│       │   │   ├── DigitalTrustScoreApplication.java
+│       │   │   ├── config/
+│       │   │   │   └── CorsConfig.java
+│       │   │   ├── controller/
+│       │   │   │   ├── HealthController.java
+│       │   │   │   └── TrustController.java
+│       │   │   ├── dto/
+│       │   │   │   ├── ErrorResponse.java
+│       │   │   │   ├── TrustRequest.java
+│       │   │   │   └── TrustResponse.java
+│       │   │   ├── entity/
+│       │   │   │   └── TrustCalculation.java
+│       │   │   ├── exception/
+│       │   │   │   └── GlobalExceptionHandler.java
+│       │   │   ├── repository/
+│       │   │   │   └── TrustCalculationRepository.java
+│       │   │   ├── scoring/
+│       │   │   │   └── TrustScoringEngine.java
+│       │   │   └── service/
+│       │   │       └── TrustScoreService.java
+│       │   └── resources/
+│       │       ├── application.properties
+│       │       └── schema.sql
+│       └── test/
+│           ├── java/com/digitaltrust/
+│           │   ├── controller/
+│           │   │   └── TrustControllerTest.java
+│           │   └── scoring/
+│           │       └── TrustScoringEngineTest.java
+│           └── resources/
+│               └── application.properties
+└── frontend/
+    ├── .env.example
+    ├── index.html
+    ├── package.json
+    ├── tsconfig.json
+    ├── vite.config.ts
+    └── src/
+        ├── App.tsx
+        ├── index.css
+        ├── main.tsx
+        ├── vite-env.d.ts
+        ├── components/
+        │   ├── ApiDocSection.tsx
+        │   ├── Footer.tsx
+        │   ├── Header.tsx
+        │   ├── Hero.tsx
+        │   ├── MethodologySection.tsx
+        │   ├── ScoreResult.tsx
+        │   ├── TrustCalculator.test.tsx
+        │   └── TrustCalculator.tsx
+        └── types/
+            └── trust.ts
 ```
 
 ---
 
-# 22. Security Philosophy
+## 6. Prerequisites
 
-The project now follows:
+Ensure you have the following installed on your machine:
 
-> **Open access does not mean zero security.**
-
-The distinction is:
-
-```text
-Authentication
-     = Who are you?
-
-Authorization
-     = What are you allowed to access?
-
-Public API security
-     = How do we safely expose functionality to everyone?
-```
-
-Digital Trust Score intentionally removes the first two from the public scoring flow.
-
-It retains the third.
+- **JDK 17 or higher** (`java -version`)
+- **Node.js 18 or higher** (`node -v`) & npm (`npm -v`)
+- **MySQL Server 8.0+** running locally or accessible remotely
+- **Eclipse IDE** (Java Enterprise Edition) and/or **VS Code**
 
 ---
 
-# 23. Updated System Principle
+## 7. Backend Setup
 
-The entire platform should follow this principle:
+1. Open a terminal and navigate to `backend/`:
+   ```bash
+   cd backend
+   ```
+2. Build the project using Maven Wrapper:
+   ```bash
+   .\mvnw.cmd clean compile
+   ```
+3. To open in **Eclipse**:
+   - Open Eclipse -> `File` -> `Import...`
+   - Choose `Existing Maven Projects` -> Select the `backend/` folder -> Click `Finish`.
 
-```text
-                 NO ACCOUNT
-                     │
-                     ▼
-              NO IDENTIFICATION
-                     │
-                     ▼
-              NO CREDENTIALS
-                     │
-                     ▼
-              PUBLIC ACCESS
-                     │
-                     ▼
-            VALIDATE INPUT DATA
-                     │
-                     ▼
-             CALCULATE TRUST
-                     │
-                     ▼
-             EXPLAIN THE SCORE
-                     │
-                     ▼
-              RETURN RESULT
+---
+
+## 8. MySQL Setup
+
+1. Start your MySQL Server daemon.
+2. Log into MySQL client:
+   ```sql
+   mysql -u root -p
+   ```
+3. Execute the schema script located at `backend/src/main/resources/schema.sql`:
+   ```sql
+   CREATE DATABASE IF NOT EXISTS digital_trust_score;
+   USE digital_trust_score;
+
+   CREATE TABLE IF NOT EXISTS trust_calculations (
+       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+       score DOUBLE NOT NULL,
+       confidence DOUBLE NOT NULL,
+       classification VARCHAR(20) NOT NULL,
+       score_version VARCHAR(10) NOT NULL,
+       identity_verification DOUBLE NOT NULL,
+       security_posture DOUBLE NOT NULL,
+       account_reliability DOUBLE NOT NULL,
+       behavioral_consistency DOUBLE NOT NULL,
+       interaction_history DOUBLE NOT NULL,
+       reputation DOUBLE NOT NULL,
+       data_consistency DOUBLE NOT NULL,
+       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+   ```
+
+---
+
+## 9. Frontend Setup
+
+1. Navigate to `frontend/`:
+   ```bash
+   cd frontend
+   ```
+2. Install npm packages:
+   ```bash
+   npm install
+   ```
+3. Build production bundle to test Vite build:
+   ```bash
+   npm run build
+   ```
+
+---
+
+## 10. Environment Variables
+
+### Backend (`backend/src/main/resources/application.properties` or environment override):
+- `DB_URL`: MySQL connection URL (default: `jdbc:mysql://localhost:3306/digital_trust_score`)
+- `DB_USERNAME`: MySQL username (default: `root`)
+- `DB_PASSWORD`: MySQL password (default: ``)
+- `SERVER_PORT`: Backend HTTP port (default: `8080`)
+
+### Frontend (`frontend/.env.example` -> `frontend/.env`):
+- `VITE_API_URL`: Backend base API URL (default: `http://localhost:8080`)
+
+---
+
+## 11. Running Locally
+
+### 1. Start the Backend Server
+```bash
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+The REST API will start on `http://localhost:8080`.
+
+### 2. Start the Frontend Dev Server
+```bash
+cd frontend
+npm run dev
+```
+Open your browser at `http://localhost:5173`.
+
+---
+
+## 12. API Documentation
+
+### 1. Health Check
+- **Endpoint**: `GET /api/v1/trust/health`
+- **Response**:
+  ```json
+  {
+    "status": "UP",
+    "service": "Digital Trust Score System API",
+    "version": "1.0",
+    "timestamp": "2026-10-02T19:00:00"
+  }
+  ```
+
+### 2. Calculate Trust Score
+- **Endpoint**: `POST /api/v1/trust/calculate`
+- **Request Body**:
+  ```json
+  {
+    "identityVerification": 90,
+    "securityPosture": 85,
+    "accountReliability": 80,
+    "behavioralConsistency": 75,
+    "interactionHistory": 80,
+    "reputation": 70,
+    "dataConsistency": 85
+  }
+  ```
+- **Response (HTTP 200 OK)**:
+  ```json
+  {
+    "calculationId": 1,
+    "score": 81.75,
+    "confidence": 70.0,
+    "classification": "HIGH",
+    "scoreVersion": "1.0",
+    "dimensions": {
+      "identityVerification": 90.0,
+      "securityPosture": 85.0,
+      "accountReliability": 80.0,
+      "behavioralConsistency": 75.0,
+      "interactionHistory": 80.0,
+      "reputation": 70.0,
+      "dataConsistency": 85.0
+    }
+  }
+  ```
+
+### 3. Get Methodology
+- **Endpoint**: `GET /api/v1/trust/methodology`
+- **Response**: Returns weights, attribute descriptions, classification ranges, and confidence formula.
+
+---
+
+## 13. Scoring Methodology
+
+### Formula
+$$\text{Score} = (I \times 0.20) + (S \times 0.20) + (A \times 0.15) + (B \times 0.15) + (H \times 0.10) + (R \times 0.10) + (D \times 0.10)$$
+
+Where $I, S, A, B, H, R, D \in [0, 100]$.
+
+### Classification Ranges
+- `0.00 – 39.99`: `VERY_LOW`
+- `40.00 – 59.99`: `LOW`
+- `60.00 – 74.99`: `MODERATE`
+- `75.00 – 89.99`: `HIGH`
+- `90.00 – 100.00`: `VERY_HIGH`
+
+### Confidence Formula
+$$\text{Confidence} = \text{Clamp}_{0}^{100}\left(100.0 - (\sigma \times 0.8) + (D \times 0.4)\right)$$
+- $\sigma$: Sample standard deviation across 7 attributes.
+- $D$: Mean absolute distance from neutral (50).
+
+---
+
+## 14. Database Schema
+
+```sql
+CREATE TABLE trust_calculations (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    score DOUBLE NOT NULL,
+    confidence DOUBLE NOT NULL,
+    classification VARCHAR(20) NOT NULL,
+    score_version VARCHAR(10) NOT NULL,
+    identity_verification DOUBLE NOT NULL,
+    security_posture DOUBLE NOT NULL,
+    account_reliability DOUBLE NOT NULL,
+    behavioral_consistency DOUBLE NOT NULL,
+    interaction_history DOUBLE NOT NULL,
+    reputation DOUBLE NOT NULL,
+    data_consistency DOUBLE NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ---
 
-# 24. Final Access Requirement
+## 15. Testing
 
-The completed application must satisfy all of the following:
+### Run Backend Unit & Controller Tests
+```bash
+cd backend
+.\mvnw.cmd test
+```
 
-* [ ] Landing page accessible without login
-* [ ] Scoring page accessible without login
-* [ ] API accessible without authentication
-* [ ] No registration page
-* [ ] No login page
-* [ ] No password field
-* [ ] No email verification
-* [ ] No phone verification
-* [ ] No OAuth
-* [ ] No social login
-* [ ] No membership requirement
-* [ ] No subscription requirement
-* [ ] No authentication cookies
-* [ ] No JWT requirement
-* [ ] No protected frontend routes
-* [ ] No authentication middleware blocking public endpoints
-* [ ] No user account required for score calculation
-* [ ] No personal identification required for normal scoring
-* [ ] All intended public features tested anonymously
-* [ ] Rate limiting remains enabled
-* [ ] Input validation remains enabled
-* [ ] HTTPS remains enabled in production
-* [ ] Security monitoring remains enabled
+### Run Frontend Vitest Unit Tests
+```bash
+cd frontend
+npm test
+```
 
 ---
 
-# Final Architecture
+## 16. Git Workflow
 
-The Digital Trust Score system is now:
+Recommended commit order:
+1. `Initial Spring Boot backend`
+2. `Add trust scoring engine`
+3. `Add MySQL persistence`
+4. `Add REST API`
+5. `Add React frontend`
+6. `Add calculator UI`
+7. `Add methodology and API documentation`
+8. `Add tests`
+9. `Add README`
 
-```text
-                  ANYONE
-                    │
-                    ▼
-             PUBLIC WEBSITE
-                    │
-                    ▼
-              PUBLIC REST API
-                    │
-                    ▼
-             INPUT VALIDATION
-                    │
-                    ▼
-            TRUST ATTRIBUTES
-                    │
-                    ▼
-             SCORING ENGINE
-                    │
-                    ▼
-           RISK + CONFIDENCE
-                    │
-                    ▼
-             TRUST SCORE
-                    │
-                    ▼
-          EXPLANATION / RESULT
-```
+---
 
-**No login. No sign-up. No account. No password. No identity verification. No authentication barrier.**
+## 17. Security
 
-The system remains protected against technical abuse through rate limiting, validation, HTTPS, secure infrastructure, monitoring, and appropriate privacy controls.
+- Input validation rejecting negative numbers, numbers >100, null values, and malformed JSON.
+- Safe exception handling with zero stack trace leakage in production.
+- Custom CORS configuration restricting origins and allowed HTTP methods.
+- Rate limiting recommendation via reverse proxy (Nginx/Cloudflare).
+
+---
+
+## 18. Privacy
+
+- **Zero Identifiable Data**: No IP tracking, personal tokens, emails, names, or credentials collected.
+- **Anonymous Database Records**: `trust_calculations` stores only numerical score vectors.
+
+---
+
+## 19. Deployment
+
+- **Backend**: Containerize using Spring Boot Maven Plugin Docker build or run jar (`java -jar target/digital-trust-score-backend-1.0.0.jar`).
+- **Frontend**: Deploy `frontend/dist` static assets to Vercel, Netlify, or Nginx.
+
+---
+
+## 20. Troubleshooting
+
+- **MySQL Connection Failed**: Ensure MySQL server is running and `DB_USERNAME` / `DB_PASSWORD` are correct in `application.properties`.
+- **CORS Error**: Ensure `VITE_API_URL` matches backend address and `CorsConfig.java` allows dev origin.
+
+---
+
+## 21. Contributing
+
+Pull requests are welcome! Ensure all backend JUnit tests (`.\mvnw.cmd test`) and frontend tests (`npm test`) pass before submitting PRs.
+
+---
+
+## 22. License
+
+This project is open-source under the **MIT License**.
